@@ -115,7 +115,7 @@ NDSize DataSet::guessChunking(NDSize chunks, size_t element_size)
     double product = 1;
     std::for_each(chunks.begin(), chunks.end(), [&](hsize_t &val) {
         //todo: check for +infinity
-        if (val == 0)
+        if (val < 1024)
             val = 1024;
 
         product *= val;
