@@ -54,6 +54,67 @@ void GroupFS::createSubFolders(const std::shared_ptr<base::IFile> &file) {
 }
 
 
+boost::optional<Directory> GroupFS::groupForObjectType(ObjectType type) const {
+    boost::optional<Directory> p;
+
+    switch (type) {
+    case ObjectType::DataArray:
+        p = data_array_group;
+        break;
+    case ObjectType::Tag:
+        p = tag_group;
+        break;
+    case ObjectType::MultiTag:
+        p = multi_tag_group;
+        break;
+    default:
+        p = boost::optional<Directory>();
+    }
+
+    return p;
+}
+
+
+boost::optional<bfs::path> GroupFS::findEntityGroup(const nix::Identity &ident) const {
+    boost::optional<Directory> p = groupForObjectType(ident.type());
+    if (!p) {
+        return  boost::optional<bfs::path>();
+    }
+
+    boost::optional<bfs::path> g;
+    const std::string &iname = ident.name();
+    const std::string &iid = ident.id();
+
+    bool haveName = !iname.empty();
+    bool haveId = !iid.empty();
+
+    if (!haveName && !haveId) {
+        return g;
+    }
+    std::string needle = haveId ? iid : iname;
+    bool foundNeedle = p->hasObject(needle);
+
+    if (foundNeedle) {
+        g = boost::make_optional(bfs::path(p->location()) / needle);
+    } else if (haveName) {
+        g = p->findByNameOrAttribute("name", iname);
+    }
+
+    if (g && haveName && haveId) {
+        std::string ename;
+        DirectoryWithAttributes temp(*g);
+        temp.getAttr("name", ename);
+
+        if (ename != iname) {
+            return boost::optional<bfs::path>();
+        }
+    }
+
+    return g;
+}
+
+
+/*
 bool GroupFS::hasDataArray(const std::string &name_or_id) const {
     std::string id = name_or_id;
 
@@ -127,7 +188,7 @@ void GroupFS::dataArrays(const std::vector<DataArray> &data_arrays) {
     std::sort(old_arrays.begin(), old_arrays.end(), cmp);
     std::vector<DataArray> add;
     std::vector<DataArray> rem;
-    
+
     std::set_difference(new_arrays.begin(), new_arrays.end(), old_arrays.begin(), old_arrays.end(),
                         std::inserter(add, add.begin()), cmp);
     std::set_difference(old_arrays.begin(), old_arrays.end(), new_arrays.begin(), new_arrays.end(),
@@ -206,8 +267,8 @@ bool GroupFS::removeTag(const std::string &name_or_id) {
 
 void GroupFS::tags(const std::vector<Tag> &tags) {
     auto cmp = [](const Tag &a, const Tag& b) { return a.name() < b.name(); };
-    
-    std::vector<Tag> new_tags(tags); 
+
+    std::vector<Tag> new_tags(tags);
     size_t tag_count = nix::check::fits_in_size_t(tagCount(), "tagCount() failed; count > size_t.");
     std::vector<Tag> old_tags(tag_count);
     for (size_t i = 0; i < old_tags.size(); i++) {
@@ -217,7 +278,7 @@ void GroupFS::tags(const std::vector<Tag> &tags) {
     std::sort(old_tags.begin(), old_tags.end(), cmp);
     std::vector<Tag> add;
     std::vector<Tag> rem;
-    
+
     std::set_difference(new_tags.begin(), new_tags.end(), old_tags.begin(), old_tags.end(),
                         std::inserter(add, add.begin()), cmp);
     std::set_difference(old_tags.begin(), old_tags.end(), new_tags.begin(), new_tags.end(),
@@ -296,7 +357,7 @@ bool GroupFS::removeMultiTag(const std::string &name_or_id) {
 
 void GroupFS::multiTags(const std::vector<MultiTag> &multi_tags) {
     auto cmp = [](const MultiTag &a, const MultiTag& b) { return a.name() < b.name(); };
-    std::vector<MultiTag> new_tags(multi_tags); 
+    std::vector<MultiTag> new_tags(multi_tags);
     size_t tag_count = nix::check::fits_in_size_t(multiTagCount(), "multiTagCount() failed; count > size_t.");
     std::vector<MultiTag> old_tags(tag_count);
     for (size_t i = 0; i < old_tags.size(); i++) {
@@ -306,7 +367,7 @@ void GroupFS::multiTags(const std::vector<MultiTag> &multi_tags) {
     std::sort(old_tags.begin(), old_tags.end(), cmp);
     std::vector<MultiTag> add;
     std::vector<MultiTag> rem;
-    
+
     std::set_difference(new_tags.begin(), new_tags.end(), old_tags.begin(), old_tags.end(),
                         std::inserter(add, add.begin()), cmp);
     std::set_difference(old_tags.begin(), old_tags.end(), new_tags.begin(), new_tags.end(),
@@ -323,7 +384,6 @@ void GroupFS::multiTags(const std::vector<MultiTag> &multi_tags) {
         removeMultiTag(t.id());
     }
 }
-
+    */
 } // file
 } // nix
-
