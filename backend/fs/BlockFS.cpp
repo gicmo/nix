@@ -160,28 +160,28 @@ std::shared_ptr<base::IEntity> BlockFS::getEntity(const nix::Identity &ident) co
     case ObjectType::Tag: {
         std::shared_ptr<TagFS> tag;
         if (eg) {
-            tag = std::make_shared<TagFS>(file(), block(), *eg);
+            tag = std::make_shared<TagFS>(file(), block(), eg->string());
         }
         return tag;
     }
     case ObjectType::MultiTag: {
         std::shared_ptr<MultiTagFS> tag;
         if (eg) {
-            tag = std::make_shared<MultiTagFS>(file(), block(), *eg);
+            tag = std::make_shared<MultiTagFS>(file(), block(), eg->string());
         }
         return tag;
     }
     case ObjectType::Group: {
         std::shared_ptr<GroupFS> groups;
         if (eg) {
-            groups = std::make_shared<GroupFS>(file(), block(), *eg);
+            groups = std::make_shared<GroupFS>(file(), block(), eg->string());
         }
         return groups;
     }
     case ObjectType::Source: {
         std::shared_ptr<SourceFS> source;
         if (eg) {
-            source = std::make_shared<SourceFS>(file(), block(), *eg);
+            source = std::make_shared<SourceFS>(file(), block(), eg->string());
         }
         return source;
     }
@@ -194,7 +194,7 @@ std::shared_ptr<base::IEntity> BlockFS::getEntity(const nix::Identity &ident) co
 
 std::shared_ptr<base::IEntity> BlockFS::getEntity(ObjectType type, ndsize_t index) const {
     boost::optional<Directory> eg = groupForObjectType(type);
-    std::string name = eg ? eg->subdir_by_index(index).string() : "";
+    std::string name = eg ? eg->sub_dir_by_index(index).string() : "";
     return getEntity({name, "", type});
 }
 
@@ -203,7 +203,7 @@ ndsize_t BlockHDF5::entityCount(ObjectType type) const {
     return g ? g->subdirCount() : ndsize_t(0);
 }
 
-bool BlockHDF5::removeEntity(const nix::Identity &ident) {
+bool BlockFS::removeEntity(const nix::Identity &ident) {
     boost::optional<Directory> p = groupForObjectType(ident.type());
     boost::optional<bfs::path> eg = findEntityGroup(ident);
 
@@ -211,10 +211,9 @@ bool BlockHDF5::removeEntity(const nix::Identity &ident) {
         return false;
     }
 
-    std::string name;
-    DirectoryWithAttributes temp(*g);
+    DirectoryWithAttributes temp(*eg);
     temp.getAttr("name", name);
-    return p.removeObjectByNameOrAttribute("entity_id", name);
+    return p->removeObjectByNameOrAttribute("entity_id", name);
     /*
     //for source we recursively remove sub-sources
     if (ident.type() == ObjectType::Source) {
@@ -293,7 +292,7 @@ std::shared_ptr<base::IDataArray> BlockFS::createDataArray(const std::string &na
     if (name.empty()) {
         throw EmptyString("Block::createDataArray empty name provided!");
     }
-    if (hasDataArray(name)) {
+    if (hasEntity({name, ObjectType::DataArray})) {
         throw DuplicateName("Block::createDataArray: an entity with the same name already exists!");
     }
     std::string id = util::createId();
@@ -311,7 +310,7 @@ std::shared_ptr<base::ITag> BlockFS::createTag(const std::string &name, const st
     if (name.empty()) {
         throw EmptyString("Block::createTag empty name provided!");
     }
-    if (hasTag(name)) {
+    if (hasEntity({name, ObjectType::Tag})) {
         throw DuplicateName("Block::createTag: an entity with the same name already exists!");
     }
     std::string id = util::createId();
@@ -330,7 +329,7 @@ std::shared_ptr<base::IMultiTag> BlockFS::createMultiTag(const std::string &name
     if (!positions) {
         throw UninitializedEntity();
     }
-    if (hasMultiTag(name)) {
+    if (hasEntity({name, ObjectType::MultiTag})) {
         throw DuplicateName("Block::createMultiTag: an entity with the same name already exists!");
     }
     std::string id = util::createId();
@@ -345,7 +344,7 @@ std::shared_ptr<base::IGroup> BlockFS::createGroup(const std::string &name, cons
     if (name.empty()) {
         throw EmptyString("Block::createGroup empty name provided!");
     }
-    if (hasGroup(name)) {
+    if (hasEntity({name, ObjectType::Group})) {
         throw DuplicateName("Block::createGroup: an entity with the same name already exists!");
     }
     std::string id = util::createId();
