@@ -194,11 +194,15 @@ std::shared_ptr<base::IEntity> BlockFS::getEntity(const nix::Identity &ident) co
 
 std::shared_ptr<base::IEntity> BlockFS::getEntity(ObjectType type, ndsize_t index) const {
     boost::optional<Directory> eg = groupForObjectType(type);
-    std::string name = eg ? eg->sub_dir_by_index(index).string() : "";
+    std::string full_path = eg ? eg->sub_dir_by_index(index).string() : "";
+    std::size_t pos = full_path.find_last_of(bfs::path::preferred_separator);      // position of "live" in str
+    if (pos == std::string::npos)
+        return getEntity({"", "", type});
+    std::string name = full_path.substr (pos+1);
     return getEntity({name, "", type});
 }
 
-ndsize_t BlockHDF5::entityCount(ObjectType type) const {
+ndsize_t BlockFS::entityCount(ObjectType type) const {
     boost::optional<Directory> g = groupForObjectType(type);
     return g ? g->subdirCount() : ndsize_t(0);
 }
@@ -210,7 +214,7 @@ bool BlockFS::removeEntity(const nix::Identity &ident) {
     if (!p || !eg) {
         return false;
     }
-
+    std::string name;
     DirectoryWithAttributes temp(*eg);
     temp.getAttr("name", name);
     return p->removeObjectByNameOrAttribute("entity_id", name);
@@ -237,12 +241,12 @@ bool BlockFS::removeEntity(const nix::Identity &ident) {
 //--------------------------------------------------
 // Methods concerning sources
 //--------------------------------------------------
-/*
+
 bool BlockFS::hasSource(const std::string &name_or_id) const {
-    return getSource(name_or_id) != nullptr;
+    return hasEntity({name_or_id, ObjectType::Source});
 }
 
-
+/*
 std::shared_ptr<base::ISource> BlockFS::getSource(const std::string &name_or_id) const {
     std::shared_ptr<base::ISource> source;
     boost::optional<bfs::path> path = source_dir.findByNameOrAttribute("entity_id", name_or_id);
@@ -278,11 +282,11 @@ std::shared_ptr<base::ISource> BlockFS::createSource(const std::string &name, co
     return std::make_shared<SourceFS>(file(), block(), source_dir.location(), id, type, name);
 }
 
-/*
+
 bool BlockFS::deleteSource(const std::string &name_or_id) {
     return source_dir.removeObjectByNameOrAttribute("entity_id", name_or_id);
 }
-*/
+
 //--------------------------------------------------
 // Methods concerning data arrays
 //--------------------------------------------------
