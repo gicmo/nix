@@ -218,24 +218,6 @@ bool BlockFS::removeEntity(const nix::Identity &ident) {
     DirectoryWithAttributes temp(*eg);
     temp.getAttr("name", name);
     return p->removeObjectByNameOrAttribute("entity_id", name);
-    /*
-    //for source we recursively remove sub-sources
-    if (ident.type() == ObjectType::Source) {
-        std::shared_ptr<ISource> isource = make_shared<SourceFS>(file(), block(), *eg);
-        Source source = isource;
-        // loop through all child sources and call deleteSource on them
-        for (auto &child : source.sources()) {
-            source.deleteSource(child.id());
-        }
-    }
-
-    // we get first "entity" link by name, but delete all others whatever their name with it
-    std::string name;
-    DirectoryWithAttributes temp(*g);
-    temp.getAttr("name", name);
-
-    return p->removeAllLinks(name);
-    */
 }
 
 //--------------------------------------------------
@@ -246,30 +228,6 @@ bool BlockFS::hasSource(const std::string &name_or_id) const {
     return hasEntity({name_or_id, ObjectType::Source});
 }
 
-/*
-std::shared_ptr<base::ISource> BlockFS::getSource(const std::string &name_or_id) const {
-    std::shared_ptr<base::ISource> source;
-    boost::optional<bfs::path> path = source_dir.findByNameOrAttribute("entity_id", name_or_id);
-    if (path) {
-        return std::make_shared<SourceFS>(file(), block(), path->string());
-    }
-    return source;
-}
-
-
-ndsize_t BlockFS::sourceCount() const {
-    return source_dir.subdirCount();
-}
-
-
-std::shared_ptr<base::ISource> BlockFS::getSource(ndsize_t index) const {
-    if (index >= sourceCount()) {
-        throw OutOfBounds("Trying to access block.source with invalid index.", index);
-    }
-    bfs::path p = source_dir.sub_dir_by_index(index);
-    return std::make_shared<SourceFS>(file(), block(), p.string());
-}
-*/
 
 std::shared_ptr<base::ISource> BlockFS::createSource(const std::string &name, const std::string &type) {
     if (name.empty()) {

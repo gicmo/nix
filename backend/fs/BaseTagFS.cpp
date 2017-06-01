@@ -108,7 +108,7 @@ bool BaseTagFS::removeReference(const std::string &name_or_id) {
     return refs_group.removeObjectByNameOrAttribute("name", name_or_id);
 }
 
-    //TODO move to frontend?!
+
 void BaseTagFS::references(const std::vector<DataArray> &refs_new) {
     auto cmp = [](const DataArray &a, const DataArray& b) { return a.name() < b.name(); };
     std::vector<DataArray> new_arrays(refs_new);
